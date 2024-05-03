@@ -1,27 +1,28 @@
-/*
-/// Module: sui_giftcard_nft
-module sui_giftcard_nft::sui_giftcard_nft {
+module sui_giftcard_nft::main {
 
-}
-*/
+   // Importing required modules
 
-
-
-module sui_giftcard_nft::nft {
-    use std::string::String;
     use sui::dynamic_object_field as ofield;
-    use sui::bag::{Bag, Self};
+    use sui::tx_context::{Self, TxContext};
+    use sui::object::{Self, ID, UID};
     use sui::coin::{Self, Coin};
+    use sui::bag::{Bag, Self};
     use sui::table::{Table, Self};
+    use sui::transfer;
+    use sui::sui::SUI;
+    use sui::balance::{Self, Balance};
 
-     /// For when amount paid does not match the expected.
+    use std::vector::{Self};
+    use std::string::{Self, String};
+
+
+    // Error constants
+
     const EAmountIncorrect: u64 = 0;
-    /// For when someone tries to delist without ownership.
-    const NotOwner: u64 = 1;
+    const ENotOwner: u64 = 1;
+    const EInvalidCap: u64 = 2;
 
-
-
-    public struct GIFTCARD has key, store {
+    public struct GiftCard has key, store {
         id: UID,
         name: String,
         price: u64,         
@@ -34,36 +35,49 @@ module sui_giftcard_nft::nft {
     public struct Marketplace has key, store {
         id: UID,
         giftcards: Bag,
-        payments: Table<address, Coin<COIN>>
+        payments: Balance<SUI>,
+        gift_id: vector<ID> // For local test Delete me !! 
     }
 
-      /// Create a new shared Marketplace.
-    public fun create_marketplace<COIN>(ctx: &mut TxContext) {
+    public struct MarketplaceCap has key, store {
+        id: UID,
+        cap_id: ID
+    }
+    
+    public struct Listing has key, store {
+        id: UID,
+        ask: u64,
+        owner: address
+    }
+    
+    // create new houselist
+    public fun create(ctx: &mut TxContext) : MarketplaceCap {
         let id = object::new(ctx);
+        let inner_ = object::uid_to_inner(&id);
         let giftcards = bag::new(ctx);
-        let payments = table::new<address, Coin<COIN>>(ctx);
-        
         transfer::share_object(Marketplace { 
             id, 
             giftcards,
-            payments,
-        })
+            payments: balance::zero(),
+            gift_id: vector::empty()
+        });
+        let cap = MarketplaceCap {
+            id: object::new(ctx),
+            cap_id: inner_
+        };
+        cap
     }
 
-    public entry fun mint_and_list_gift_card<T: key + store, COIN>(
-        marketplace: &mut Marketplace,
-        item: T,
+    public fun mint(
         name: String, 
         price: u64,
         description: String, 
         company: String, 
         value: u64, 
         ctx: &mut TxContext
-        
-        ){
-        // create the new nft
-         let item_id = object::id(&item);
-        let nft = GIFTCARD {
+    ) : GiftCard {
+    
+        let nft = GiftCard {
             id : object::new(ctx),
             name,
             price,
@@ -72,111 +86,90 @@ module sui_giftcard_nft::nft {
             value,
             owner: ctx.sender(),
         };
-
-        transfer::public_transfer(nft, ctx.sender());
-
-        ofield::add(&mut nft.id, true, item);
-        bag::add(&mut marketplace.giftcards, item_id, nft);
-
-    }
-
-    fun unlist_giftcard<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
-        item_id: ID,
-        ctx: &TxContext
-        ): T {
-            let GIFTCARD {
-                id,
-                name,
-                price,
-                description,
-                company,
-                value,
-                owner,
-
-            } = bag::remove(&mut marketplace.giftcards, item_id);
-
-            assert!(ctx.sender() == owner, NotOwner);
-
-            let nft = ofield::remove(&mut id, true);
-            object::delete(id);
-            nft
-            
-        }
-
-
-         public fun unlist_and_retrieve<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
-        item_id: ID,
-        ctx: &mut TxContext
-    ) {
-        let nft = unlist_giftcard<T, COIN>(marketplace, item_id, ctx);
-        transfer::public_transfer(nft, ctx.sender());
-    }
-
-     fun buy_giftcard<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
-        item_id: ID,
-        paid: Coin<COIN>,
-    ): T {
-        let GIFTCARD {
-                id,
-                name,
-                price,
-                description,
-                company,
-                value,
-                owner,
-
-            } = bag::remove(&mut marketplace.giftcards, item_id);
-
-        assert!(price == coin::value(&paid), EAmountIncorrect);
-
-        // Check if there's already a Coin hanging and merge `paid` with it.
-        // Otherwise attach `paid` to the `Marketplace` under owner's `address`.
-        if (table::contains<address, Coin<COIN>>(&marketplace.payments, owner)) {
-            coin::join(
-                table::borrow_mut<address, Coin<COIN>>(&mut marketplace.payments, owner),
-                paid
-            )
-        } else {
-            table::add(&mut marketplace.payments, owner, paid)
-        };
-
-        let nft = ofield::remove(&mut id, true);
-        object::delete(id);
         nft
     }
 
-     public fun buy_and_retrive<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
+    public entry fun list<T: key + store>(
+        market: &mut Marketplace,
+        item: T,
+        ask: u64,
+        ctx: &mut TxContext
+    ) {
+        let item_id = object::id(&item);
+        vector::push_back(&mut market.gift_id, item_id); // for access car id Delete me !! 
+        let mut listing = Listing {
+            id: object::new(ctx),
+            ask: ask,
+            owner: tx_context::sender(ctx),
+        };
+        ofield::add(&mut listing.id, true, item);
+        bag::add(&mut market.giftcards, item_id, listing)
+    }
+
+    fun delist<T: key + store>(
+        market: &mut Marketplace,
         item_id: ID,
-        paid: Coin<COIN>,
+        ctx: &mut TxContext
+    ): T {
+        let Listing { mut id, owner, ask: _ } = bag::remove(&mut market.giftcards, item_id);
+
+        assert!(ctx.sender() == owner, ENotOwner);
+
+        let item = ofield::remove(&mut id, true);
+        object::delete(id);
+        item
+    }
+
+    public entry fun delist_and_take<T: key + store>(
+        market: &mut Marketplace,
+        item_id: ID,
+        ctx: &mut TxContext
+    ) {
+        let item = delist<T>(market, item_id, ctx);
+        transfer::public_transfer(item, tx_context::sender(ctx));
+    }
+
+    fun buy<T: key + store>(
+        market: &mut Marketplace,
+        item_id: ID,
+        paid: Coin<SUI>,
+    ): T {
+        let Listing { mut id, ask, owner } = bag::remove(&mut market.giftcards, item_id);
+        assert!(ask == coin::value(&paid), EAmountIncorrect);
+        coin::put(&mut market.payments, paid);
+
+
+        let item = ofield::remove(&mut id, true);
+        object::delete(id);
+        item
+    }
+
+    public entry fun buy_and_take<T: key + store>(
+        market: &mut Marketplace,
+        item_id: ID,
+        paid: Coin<SUI>,
         ctx: &mut TxContext
     ) {
         transfer::public_transfer(
-            buy_giftcard<T, COIN>(marketplace, item_id, paid),
+            buy<T>(market, item_id, paid),
             tx_context::sender(ctx)
         )
     }
 
-    fun withdraw_profits<COIN>(
-        marketplace: &mut Marketplace<COIN>,
-        ctx: &TxContext
-    ): Coin<COIN> {
-        table::remove<address, Coin<COIN>>(&mut marketplace.payments, tx_context::sender(ctx))
-    }
-
-    #[lint_allow(self_transfer)]
-    /// Call [`take_profits`] and transfer Coin object to the sender.
-    public fun take_profits_and_keep<COIN>(
-        marketplace: &mut Marketplace<COIN>,
+    public fun  take_profits(
+        cap: &MarketplaceCap,
+        market: &mut Marketplace,
         ctx: &mut TxContext
-    ) {
-        transfer::public_transfer(
-            withdraw_profits(marketplace, ctx),
-            ctx.sender()
-        )
+    ): Coin<SUI> {
+        assert!(object::id(market) == cap.cap_id, EInvalidCap);
+        let balance_ = balance::withdraw_all(&mut market.payments);
+        let coin_ = coin::from_balance(balance_, ctx);
+        coin_
     }
 
+    // For tests
+    public fun get_gift_id(self: &Marketplace) : ID {
+        let id_ = vector::borrow(&self.gift_id, 0);
+        *id_
+    }
 }
