@@ -11,6 +11,7 @@ module sui_giftcard_nft::nft {
     use std::string::String;
     use sui::dynamic_object_field as ofield;
     use sui::bag::{Bag, Self};
+    use sui::sui::SUI;
     use sui::coin::{Self, Coin};
     use sui::table::{Table, Self};
 
@@ -34,14 +35,14 @@ module sui_giftcard_nft::nft {
     public struct Marketplace has key, store {
         id: UID,
         giftcards: Bag,
-        payments: Table<address, Coin<COIN>>
+        payments: Table<address, Coin<SUI>>
     }
 
       /// Create a new shared Marketplace.
-    public fun create_marketplace<COIN>(ctx: &mut TxContext) {
+    public fun create_marketplace(ctx: &mut TxContext) {
         let id = object::new(ctx);
         let giftcards = bag::new(ctx);
-        let payments = table::new<address, Coin<COIN>>(ctx);
+        let payments = table::new<address, Coin<SUI>>(ctx);
         
         transfer::share_object(Marketplace { 
             id, 
@@ -50,7 +51,7 @@ module sui_giftcard_nft::nft {
         })
     }
 
-    public entry fun mint_and_list_gift_card<T: key + store, COIN>(
+    public entry fun mint_and_list_gift_card<T: key + store>(
         marketplace: &mut Marketplace,
         item: T,
         name: String, 
@@ -80,8 +81,8 @@ module sui_giftcard_nft::nft {
 
     }
 
-    fun unlist_giftcard<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
+    fun unlist_giftcard<T: key + store>(
+        marketplace: &mut Marketplace,
         item_id: ID,
         ctx: &TxContext
         ): T {
@@ -105,19 +106,19 @@ module sui_giftcard_nft::nft {
         }
 
 
-         public fun unlist_and_retrieve<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
+         public fun unlist_and_retrieve<T: key + store>(
+        marketplace: &mut Marketplace,
         item_id: ID,
         ctx: &mut TxContext
     ) {
-        let nft = unlist_giftcard<T, COIN>(marketplace, item_id, ctx);
+        let nft = unlist_giftcard<T>(marketplace, item_id, ctx);
         transfer::public_transfer(nft, ctx.sender());
     }
 
-     fun buy_giftcard<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
+     fun buy_giftcard<T: key + store>(
+        marketplace: &mut Marketplace,
         item_id: ID,
-        paid: Coin<COIN>,
+        paid: Coin<SUI>,
     ): T {
         let GIFTCARD {
                 id,
@@ -134,9 +135,9 @@ module sui_giftcard_nft::nft {
 
         // Check if there's already a Coin hanging and merge `paid` with it.
         // Otherwise attach `paid` to the `Marketplace` under owner's `address`.
-        if (table::contains<address, Coin<COIN>>(&marketplace.payments, owner)) {
+        if (table::contains<address, Coin<SUI>>(&marketplace.payments, owner)) {
             coin::join(
-                table::borrow_mut<address, Coin<COIN>>(&mut marketplace.payments, owner),
+                table::borrow_mut<address, Coin<SUI>>(&mut marketplace.payments, owner),
                 paid
             )
         } else {
@@ -148,29 +149,29 @@ module sui_giftcard_nft::nft {
         nft
     }
 
-     public fun buy_and_retrive<T: key + store, COIN>(
-        marketplace: &mut Marketplace<COIN>,
+     public fun buy_and_retrive<T: key + store>(
+        marketplace: &mut Marketplace,
         item_id: ID,
-        paid: Coin<COIN>,
+        paid: Coin<SUI>,
         ctx: &mut TxContext
     ) {
         transfer::public_transfer(
-            buy_giftcard<T, COIN>(marketplace, item_id, paid),
+            buy_giftcard<T>(marketplace, item_id, paid),
             tx_context::sender(ctx)
         )
     }
 
-    fun withdraw_profits<COIN>(
-        marketplace: &mut Marketplace<COIN>,
+    fun withdraw_profits(
+        marketplace: &mut Marketplace,
         ctx: &TxContext
-    ): Coin<COIN> {
-        table::remove<address, Coin<COIN>>(&mut marketplace.payments, tx_context::sender(ctx))
+    ): Coin<SUI> {
+        table::remove<address, Coin<SUI>>(&mut marketplace.payments, tx_context::sender(ctx))
     }
 
     #[lint_allow(self_transfer)]
     /// Call [`take_profits`] and transfer Coin object to the sender.
-    public fun take_profits_and_keep<COIN>(
-        marketplace: &mut Marketplace<COIN>,
+    public fun take_profits_and_keep(
+        marketplace: &mut Marketplace,
         ctx: &mut TxContext
     ) {
         transfer::public_transfer(
