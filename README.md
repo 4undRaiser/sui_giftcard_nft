@@ -5,7 +5,7 @@ A marketplace where users can buy and sell giftcards. This project uses the sui 
 
 * Mint giftcard nfts
 * create kioks
-* place nft in kiosks
+* place giftcards in kiosks
 * list giftcard for sell
 * buy giftcards
 * earn royalties from sales
