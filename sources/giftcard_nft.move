@@ -14,14 +14,11 @@ module sui_giftcard_nft::giftcard_nft {
     use sui::sui::{SUI};
     use sui::transfer_policy::{Self, TransferRequest, TransferPolicy};
     use sui::package::{Self, Publisher};
-
-     /// For when amount paid does not match the expected.
-    ///const EAmountIncorrect: u64 = 0;
-    /// For when someone tries to delist without ownership.
-    ///const NotOwner: u64 = 1;
+    use sui::event;
 
 
 
+    // A struct object representing the giftcard.
     public struct GIFTCARD has key, store {
         id: UID,
         name: String,        
@@ -33,11 +30,23 @@ module sui_giftcard_nft::giftcard_nft {
 
     public struct GIFTCARD_NFT has drop {}
 
+
+    //Event to be emitted when an item is listed in a kiosk.
+    public struct ItemListed<phantom T> has copy, drop {
+        kiosk: ID,
+        id: ID,
+        price:u64,
+
+    }
+    
+    
+   // initializing the package
    fun init (otw: GIFTCARD_NFT, ctx: &mut TxContext) {
         let publisher = package::claim(otw, ctx);
         transfer::public_transfer(publisher, ctx.sender());
     }
 
+    // mint a new giftcard nft
     public fun mint_giftcard(
         name: String, 
         description: String, 
@@ -58,6 +67,7 @@ module sui_giftcard_nft::giftcard_nft {
     }
 
     #[allow(lint(share_owned, self_transfer))]
+
     /// Create new kiosk
     public fun new_kiosk(ctx: &mut TxContext) {
         let (kiosk, kiosk_owner_cap) = kiosk::new(ctx);
@@ -73,18 +83,27 @@ module sui_giftcard_nft::giftcard_nft {
      /// Withdraw item from Kiosk
     public fun withdraw(kiosk: &mut Kiosk, cap: &KioskOwnerCap, item_id: object::ID): GIFTCARD {
         kiosk::take(kiosk, cap, item_id)
+
     }
 
-      /// List item for sale
+    /// List item for sale
     public fun list(kiosk: &mut Kiosk, cap: &KioskOwnerCap, item_id: object::ID, price: u64) {
-        kiosk::list<GIFTCARD>(kiosk, cap, item_id, price)
+        kiosk::list<GIFTCARD>(kiosk, cap, item_id, price);
+        
+        event::emit(ItemListed<GIFTCARD>{
+            kiosk: object::id(kiosk),
+            id: item_id,
+            price: price,
+        });
     }
 
+    /// Buy listed item
     public fun buy(kiosk: &mut Kiosk, item_id: object::ID, payment: Coin<SUI>): (GIFTCARD, TransferRequest<GIFTCARD>){
         kiosk::purchase(kiosk, item_id, payment)
     }
 
-     public fun confirm_request(policy: &TransferPolicy<GIFTCARD>, req: TransferRequest<GIFTCARD>) {
+    /// Confirm the TransferRequest
+    public fun confirm_request(policy: &TransferPolicy<GIFTCARD>, req: TransferRequest<GIFTCARD>) {
         transfer_policy::confirm_request(policy, req);
     }
 
