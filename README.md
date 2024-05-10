@@ -1,5 +1,5 @@
 # sui_giftcard_nft
-A marketplace where users can buy and sell giftcards. This project uses the sui kiok module to implement the market place.
+A marketplace where users can buy and sell giftcards. This project uses the sui kiosk module to implement the market place.
 
 **Functions**
 
@@ -11,4 +11,4 @@ A marketplace where users can buy and sell giftcards. This project uses the sui 
 * earn royalties from sales
 * withdraw from kiosk
 
-## Usage 
+### Usage 
