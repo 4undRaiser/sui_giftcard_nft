@@ -15,6 +15,6 @@ A marketplace where users can buy and sell giftcards. This project uses the sui 
 
 publish the contract 
 
-***bash
+```bash
 export KIOSK_PACKAGE_ID=<Package ID of example kiosk smart contract>
-***
+```
