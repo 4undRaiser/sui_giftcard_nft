@@ -17,6 +17,14 @@ publish the contract
 ```bash
  sui client publish --gas-budget 50000000
 ```
+
+save the publisher
+```bash
+export KIOSK_PUBLISHER="Publisher object ID"
+```
+![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/0f1fd886-4ba5-4ad5-b2f8-f2726bb3d059)
+
+
 Save the package id of our marketplace for easy reference when calling functions.
 ```bash
 export KIOSK_PACKAGE_ID="Package ID of marketplace smart contract"
@@ -35,4 +43,11 @@ export KIOSK="Object id of newly created Kiosk"
 export KIOSK_OWNER_CAP="Object id of newly created KioskOwnerCap"
 ```
 ![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/ebe1794e-120b-45c1-aa58-7b10242bfad8)
+
+Mint a giftcard nft.
+```bash
+
+```
+
+
 
