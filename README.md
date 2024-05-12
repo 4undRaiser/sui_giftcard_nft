@@ -20,16 +20,18 @@ publish the contract
 
 save the publisher
 ```bash
-export KIOSK_PUBLISHER="Publisher object ID"
+export MARKETPLACE_PUBLISHER="Publisher object ID"
 ```
-![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/0f1fd886-4ba5-4ad5-b2f8-f2726bb3d059)
+![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/5b4c5f44-7305-421f-a623-926399a90ff2)
+
 
 
 Save the package id of our marketplace for easy reference when calling functions.
 ```bash
-export KIOSK_PACKAGE_ID="Package ID of marketplace smart contract"
+export MARKETPLACE_PACKAGE_ID="Package ID of marketplace smart contract"
 ```
-![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/df91781a-cca4-4230-8033-7f362d1614b1)
+![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/726a5fab-ed9c-431d-a11d-bc1beeb4f0c9)
+
 
 
 Next create a new kiosk
@@ -42,7 +44,8 @@ export the newly created Kiosk and its KioskOwnerCap for later use.
 export KIOSK="Object id of newly created Kiosk"
 export KIOSK_OWNER_CAP="Object id of newly created KioskOwnerCap"
 ```
-![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/ebe1794e-120b-45c1-aa58-7b10242bfad8)
+![image](https://github.com/4undRaiser/sui_giftcard_nft/assets/87926451/bb5b96f3-785a-406a-97aa-55d78d93c827)
+
 
 Mint a giftcard nft.
 ```bash
