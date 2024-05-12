@@ -80,7 +80,7 @@ module sui_giftcard_nft::giftcard_nft {
         kiosk::place(kiosk, cap, item)
     }
 
-     /// Withdraw item from Kiosk
+     /// Withdraw from Kiosk
     public fun withdraw(kiosk: &mut Kiosk, cap: &KioskOwnerCap, item_id: object::ID): GIFTCARD {
         kiosk::take(kiosk, cap, item_id)
 
