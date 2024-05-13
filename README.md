@@ -49,7 +49,34 @@ export KIOSK_OWNER_CAP="Object id of newly created KioskOwnerCap"
 
 Mint a giftcard nft.
 ```bash
+sui client call --package $MARKETPLACE_PAC
+KAGE_ID --module giftcard_nft --function mint_giftcard --args "Prime" "Amazon prime giftcard" "Amazon" "233132344234" --gas-budget 50000000
+```
 
+
+```bash
+sui client call --package $MARKETPLACE_PACKAGE_ID --module giftcard_nft --function new_policy --args $MARKETPLACE_PUBLISHER --gas-budget 10000000
+```
+
+
+```bash
+export KIOSK_TRANSFER_POLICY=<TransferPolicy object ID>
+export KIOSK_TRANSFER_POLICY_CAP=<TransferPolicyCap object ID>
+```
+
+
+```bash
+sui client call --package $MARKETPLACE_PACKAGE_ID --module giftcard_royalty_rule --function add --args $KIOSK_TRANSFER_POLICY $KIOSK_TRANSFER_POLICY_CAP 10 100 --type-args $MARKETPLACE_PACKAGE_ID::giftcard_nft::GIFTCARD --gas-budget 10000000
+```
+
+export KIOSK_GIFTCARD=<Object ID of the listed >
+
+```bash
+sui client call --package $MARKETPLACE_PACKAGE_ID --module giftcard_nft --function place --args $KIOSK $KIOSK_OWNER_CAP $GIFTCARD --gas-budget 10000000
+```
+
+```bash
+sui client call --package $MARKETPLACE_PACKAGE_ID --module giftcard_nft --function list --args $KIOSK $KIOSK_OWNER_CAP $GIFTCARD 10000 --gas-budget 10000000
 ```
 
 
