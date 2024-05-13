@@ -1,10 +1,3 @@
-/*
-/// Module: sui_giftcard_nft
-module sui_giftcard_nft::sui_giftcard_nft {
-
-}
-*/
-
 
 
 module sui_giftcard_nft::giftcard_nft {
