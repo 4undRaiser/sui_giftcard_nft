@@ -1,10 +1,3 @@
-/*
-/// Module: sui_giftcard_nft
-module sui_giftcard_nft::sui_giftcard_nft {
-
-}
-*/
-
 
 
 module sui_giftcard_nft::giftcard_nft {
@@ -24,7 +17,7 @@ module sui_giftcard_nft::giftcard_nft {
         name: String,        
         description: String,
         company: String,
-        value: u64,
+        value: String,
         owner: address,
     }
 
@@ -47,29 +40,28 @@ module sui_giftcard_nft::giftcard_nft {
     }
 
     // mint a new giftcard nft
-    public fun mint_giftcard(
+    public entry fun mint_giftcard(
         name: String, 
         description: String, 
         company: String, 
-        value: u64, 
+        value: String, 
         ctx: &mut TxContext,
-
-        ): GIFTCARD {
-        GIFTCARD {
+        ){
+      let giftcard: GIFTCARD = GIFTCARD {
             id: object::new(ctx),
             name,
             description,
             company,
             value,
-            owner: ctx.sender(),
-            
-        }
+            owner: ctx.sender(),  
+        };
+        transfer::public_transfer(giftcard, ctx.sender());
     }
 
     #[allow(lint(share_owned, self_transfer))]
 
     /// Create new kiosk
-    public fun new_kiosk(ctx: &mut TxContext) {
+    public entry fun new_kiosk(ctx: &mut TxContext) {
         let (kiosk, kiosk_owner_cap) = kiosk::new(ctx);
         transfer::public_share_object(kiosk);
         transfer::public_transfer(kiosk_owner_cap, ctx.sender());
@@ -80,7 +72,7 @@ module sui_giftcard_nft::giftcard_nft {
         kiosk::place(kiosk, cap, item)
     }
 
-     /// Withdraw item from Kiosk
+     /// Withdraw from Kiosk
     public fun withdraw(kiosk: &mut Kiosk, cap: &KioskOwnerCap, item_id: object::ID): GIFTCARD {
         kiosk::take(kiosk, cap, item_id)
 
@@ -113,12 +105,6 @@ module sui_giftcard_nft::giftcard_nft {
         let (policy, policy_cap) = transfer_policy::new<GIFTCARD>(publisher, ctx);
         transfer::public_share_object(policy);
         transfer::public_transfer(policy_cap, ctx.sender());
-    }
-
-     #[test_only]
-    // call the init function
-    public fun test_init(ctx: &mut TxContext) {
-        init(GIFTCARD_NFT {}, ctx);
     }
 
 
